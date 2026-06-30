@@ -177,6 +177,67 @@ describe('Random router', () => {
     });
   });
 
+  describe('GET /random/history', () => {
+    it('GET /random/history returns numbers in descending order', async () => {
+      const { createRouter } = require('../src/routes/random');
+      const { createDb } = require('../src/db');
+      const express = require('express');
+
+      const db = createDb(':memory:');
+      const router = createRouter(db);
+      const app = express();
+      app.use(express.json());
+      app.use('/', router);
+
+      const request = require('supertest');
+
+      // Generate 3 numbers
+      const res1 = await request(app).get('/random').expect(200);
+      const res2 = await request(app).get('/random').expect(200);
+      const res3 = await request(app).get('/random').expect(200);
+
+      // Get history
+      const historyRes = await request(app)
+        .get('/random/history')
+        .expect(200);
+
+      expect(historyRes.body).toEqual({
+        data: {
+          numbers: [
+            { number: res3.body.data.number, generatedAt: expect.any(String) },
+            { number: res2.body.data.number, generatedAt: expect.any(String) },
+            { number: res1.body.data.number, generatedAt: expect.any(String) }
+          ]
+        }
+      });
+
+      // Verify ISO-8601 format
+      historyRes.body.data.numbers.forEach(entry => {
+        expect(entry.generatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+      });
+    });
+  });
+
+  describe('GET /random — DB write failure', () => {
+    it('GET /random returns 500 when DB write fails', async () => {
+      const originalPrepare = db.prepare;
+      db.prepare = jest.fn(() => {
+        throw new Error('DB error');
+      });
+
+      const response = await request(app)
+        .get('/random')
+        .expect(500);
+
+      expect(response.body).toEqual({
+        error: { type: 'internal', message: 'Internal server error' }
+      });
+      expect(response.body).not.toHaveProperty('data');
+
+      db.prepare = originalPrepare;
+    });
+  });
+
   describe('POST /random (wrong HTTP method)', () => {
     it('returns 404 status', async () => {
       const response = await request(app).post('/random');

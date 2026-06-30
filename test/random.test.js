@@ -76,6 +76,42 @@ describe('GET /random?max=50 (max-only, default min)', () => {
   });
 });
 
+
+describe('GET /random with invalid query params', () => {
+  it('returns 400 when min is a non-integer string', async () => {
+    const response = await request(app).get('/random?min=abc');
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: {
+        type: 'validation',
+        message: 'min and max must be integers'
+      }
+    });
+  });
+
+  it('returns 400 when min is a decimal', async () => {
+    const response = await request(app).get('/random?min=1.5&max=10');
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: {
+        type: 'validation',
+        message: 'min and max must be integers'
+      }
+    });
+  });
+
+  it('returns 400 when max is an empty string', async () => {
+    const response = await request(app).get('/random?max=');
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: {
+        type: 'validation',
+        message: 'min and max must be integers'
+      }
+    });
+  });
+});
+
 describe('POST /random (wrong HTTP method)', () => {
   it('returns 404 status', async () => {
     const response = await request(app).post('/random');
@@ -104,5 +140,35 @@ describe('GET /random with min-only parameter', () => {
       expect(number).toBeGreaterThanOrEqual(5);
       expect(number).toBeLessThanOrEqual(100);
     }
+  });
+});
+
+describe('GET /random one-sided range edge cases', () => {
+  it('returns HTTP 400 when min=101 (min exceeds default max of 100)', async () => {
+    const response = await request(app).get('/random?min=101');
+    expect(response.status).toBe(400);
+  });
+
+  it('returns HTTP 400 when max=0 (max is below default min of 1)', async () => {
+    const response = await request(app).get('/random?max=0');
+    expect(response.status).toBe(400);
+  });
+});
+
+describe('GET /random with unknown query params', () => {
+  it('returns HTTP 200 when unknown param foo=bar is passed', async () => {
+    const response = await request(app).get('/random?foo=bar');
+    expect(response.status).toBe(200);
+  });
+
+  it('returns data.number in [1, 100] when unknown param foo=bar is passed', async () => {
+    const response = await request(app).get('/random?foo=bar');
+    expect(response.body).toHaveProperty('data');
+    expect(response.body.data).toHaveProperty('number');
+    const { number } = response.body.data;
+    expect(typeof number).toBe('number');
+    expect(Number.isInteger(number)).toBe(true);
+    expect(number).toBeGreaterThanOrEqual(1);
+    expect(number).toBeLessThanOrEqual(100);
   });
 });

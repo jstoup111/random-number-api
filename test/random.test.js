@@ -126,6 +126,28 @@ describe('null initial state — retry loop skipped on first call', () => {
   });
 });
 
+describe('out-of-range lastNumber — retry loop skipped', () => {
+  it('should skip retry when lastNumber is out of range', async () => {
+    route._reset();
+
+    // Prime lastNumber to 95: Math.floor(0.94 * 100) + 1 = 95
+    const mockRandom1 = jest.spyOn(Math, 'random').mockReturnValue(0.94);
+    const primeRes = await request(app).get('/random');
+    mockRandom1.mockRestore();
+    expect(primeRes.body.data.number).toBe(95);
+
+    // lastNumber is now 95 (outside the logical subset [1, 10]).
+    // Mock Math.random to return 0.5 → Math.floor(0.5 * 100) + 1 = 51
+    // 51 !== 95, so the retry loop exits immediately after one call.
+    const mockRandom2 = jest.spyOn(Math, 'random').mockReturnValue(0.5);
+    const res = await request(app).get('/random');
+
+    expect(res.body.data.number).toBe(51);
+    expect(mockRandom2).toHaveBeenCalledTimes(1);
+    mockRandom2.mockRestore();
+  });
+});
+
 describe('POST /random (wrong HTTP method)', () => {
   it('returns 404 status', async () => {
     const response = await request(app).post('/random');

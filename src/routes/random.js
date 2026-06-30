@@ -29,8 +29,8 @@ router.get('/random', (req, res) => {
     max = 100;
   }
 
-  if (min > max) {
-    return res.status(400).json({ error: { type: 'validation', message: 'min must be less than or equal to max' } });
+  if (min >= max) {
+    return res.status(400).json({ error: { type: 'validation', message: 'min must be less than max' } });
   }
 
   const number = Math.floor(Math.random() * (max - min + 1)) + min;

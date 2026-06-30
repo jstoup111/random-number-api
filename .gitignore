@@ -2,3 +2,4 @@
 .daemon/
 .worktrees/
 .serena/
+.claude/

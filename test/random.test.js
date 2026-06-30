@@ -1,5 +1,21 @@
 const request = require('supertest');
 const app = require('../src/app');
+const route = require('../src/routes/random');
+
+describe('state helpers', () => {
+  it('exports _getLastNumber', () => {
+    expect(route._getLastNumber).toBeDefined();
+  });
+
+  it('_getLastNumber returns null initially', () => {
+    route._reset();
+    expect(route._getLastNumber()).toBeNull();
+  });
+
+  it('exports _reset', () => {
+    expect(route._reset).toBeDefined();
+  });
+});
 
 describe('GET /random', () => {
   it('returns 200 status', async () => {

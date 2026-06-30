@@ -6,9 +6,11 @@ const CASE_SETS = {
   lower: 'abcdefghijklmnopqrstuvwxyz'
 };
 
+const CASE_VALIDATION_ERROR = Symbol('CASE_VALIDATION_ERROR');
+
 function parseCase(req) {
   const requested = req.query.case === undefined ? 'mixed' : req.query.case;
-  return CASE_SETS[requested];
+  return CASE_SETS[requested] === undefined ? CASE_VALIDATION_ERROR : CASE_SETS[requested];
 }
 
 function createRouter(db) {
@@ -16,6 +18,13 @@ function createRouter(db) {
 
   router.get('/random/character', (req, res) => {
     const charset = parseCase(req);
+
+    if (charset === CASE_VALIDATION_ERROR) {
+      return res.status(400).json({
+        error: { type: 'validation', message: 'case must be one of: upper, lower, mixed' }
+      });
+    }
+
     const character = charset.charAt(Math.floor(Math.random() * charset.length));
     const resolvedCase = req.query.case === undefined ? 'mixed' : req.query.case;
 

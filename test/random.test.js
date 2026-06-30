@@ -89,6 +89,32 @@ describe('consecutive calls', () => {
   });
 });
 
+describe('retry loop — fires when candidate equals lastNumber', () => {
+  it('should retry when candidate equals lastNumber', async () => {
+    route._reset();
+    // Prime lastNumber to 42: mock Math.random to return 0.41
+    // Math.floor(0.41 * 100) + 1 = 42
+    const primeRandom = jest.spyOn(Math, 'random').mockReturnValue(0.41);
+    await request(app).get('/random');
+    primeRandom.mockRestore();
+
+    // Now lastNumber is 42.
+    // Mock sequence: 0.41 → 42 (duplicate, retry), 0.41 → 42 (duplicate, retry), 0.42 → 43 (accepted)
+    const mockRandom = jest.spyOn(Math, 'random')
+      .mockReturnValueOnce(0.41)
+      .mockReturnValueOnce(0.41)
+      .mockReturnValueOnce(0.42);
+
+    const res = await request(app).get('/random');
+
+    // Result should be 43 (the first non-duplicate value)
+    expect(res.body.data.number).toBe(43);
+    // Math.random should be called at least twice (retry demonstrated)
+    expect(mockRandom.mock.calls.length).toBeGreaterThanOrEqual(2);
+    mockRandom.mockRestore();
+  });
+});
+
 describe('null initial state — retry loop skipped on first call', () => {
   it('should skip retry loop when lastNumber is null', async () => {
     route._reset();

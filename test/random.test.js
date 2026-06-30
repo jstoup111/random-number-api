@@ -92,3 +92,17 @@ describe('POST /random (wrong HTTP method)', () => {
     });
   });
 });
+
+describe('GET /random with min-only parameter', () => {
+  it('returns number in [5, 100] across 20 calls when only min=5 is given', async () => {
+    for (let i = 0; i < 20; i++) {
+      const response = await request(app).get('/random?min=5');
+      expect(response.status).toBe(200);
+      const { number } = response.body.data;
+      expect(typeof number).toBe('number');
+      expect(Number.isInteger(number)).toBe(true);
+      expect(number).toBeGreaterThanOrEqual(5);
+      expect(number).toBeLessThanOrEqual(100);
+    }
+  });
+});

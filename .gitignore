@@ -1,0 +1,4 @@
+.pipeline/
+.daemon/
+.worktrees/
+.serena/

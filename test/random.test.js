@@ -172,3 +172,37 @@ describe('GET /random with unknown query params', () => {
     expect(number).toBeLessThanOrEqual(100);
   });
 });
+
+describe('GET /random range ordering validation', () => {
+  it('returns 400 when min equals max (min=5&max=5)', async () => {
+    const response = await request(app).get('/random?min=5&max=5');
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: {
+        type: 'validation',
+        message: 'min must be less than max'
+      }
+    });
+  });
+
+  it('returns 400 when min is greater than max (min=10&max=3)', async () => {
+    const response = await request(app).get('/random?min=10&max=3');
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: {
+        type: 'validation',
+        message: 'min must be less than max'
+      }
+    });
+  });
+
+  it('returns 200 when min=1 and max=2 (minimum valid gap)', async () => {
+    const response = await request(app).get('/random?min=1&max=2');
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('data');
+    expect(response.body.data).toHaveProperty('number');
+    const { number } = response.body.data;
+    expect(number).toBeGreaterThanOrEqual(1);
+    expect(number).toBeLessThanOrEqual(2);
+  });
+});

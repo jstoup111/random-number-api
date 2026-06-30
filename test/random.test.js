@@ -216,6 +216,27 @@ describe('Random router', () => {
         expect(entry.generatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
       });
     });
+
+    it('GET /random/history returns 200 with empty array when DB is empty', async () => {
+      const { createRouter } = require('../src/routes/random');
+      const { createDb } = require('../src/db');
+      const express = require('express');
+
+      const db = createDb(':memory:');
+      const router = createRouter(db);
+      const app = express();
+      app.use(express.json());
+      app.use('/random', router);
+
+      const request = require('supertest');
+      const response = await request(app)
+        .get('/random/history')
+        .expect(200);
+
+      expect(response.body).toEqual({
+        data: { numbers: [] }
+      });
+    });
   });
 
   describe('GET /random — DB write failure', () => {
@@ -251,6 +272,18 @@ describe('Random router', () => {
           type: 'not_found',
           message: 'Not found'
         }
+      });
+    });
+  });
+
+  describe('POST /random/history (wrong HTTP method)', () => {
+    it('returns 404', async () => {
+      const response = await request(app)
+        .post('/random/history')
+        .expect(404);
+
+      expect(response.body).toEqual({
+        error: { type: 'not_found', message: 'Not found' }
       });
     });
   });

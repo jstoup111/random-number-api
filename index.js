@@ -1,4 +1,5 @@
-const app = require('./src/app');
+const { createApp } = require('./src/app');
+const { createDb } = require('./src/db');
 
 const PORT = process.env.PORT || 3000;
 
@@ -7,6 +8,9 @@ if (process.env.PORT && isNaN(PORT)) {
   console.error(`Error: PORT must be a valid number, got "${process.env.PORT}"`);
   process.exit(1);
 }
+
+const db = createDb('random_numbers.db');
+const app = createApp(db);
 
 app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}`);

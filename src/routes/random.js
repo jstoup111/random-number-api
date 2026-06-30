@@ -3,31 +3,32 @@ const express = require('express');
 const router = express.Router();
 
 function parseQueryInt(val) {
-  if (val === undefined) return 0; // sentinel: not provided
-  if (!/^-?\d+$/.test(val)) return null;
+  if (!/^\d+$/.test(val)) return null;
   return parseInt(val, 10);
 }
 
+function validateParam(val, paramName, defaultVal) {
+  if (val === undefined) return { ok: true, value: defaultVal };
+  const parsed = parseQueryInt(val);
+  if (parsed === null) {
+    return { ok: false, error: `${paramName} must be a positive integer` };
+  }
+  return { ok: true, value: parsed };
+}
+
 router.get('/random', (req, res) => {
-  let min, max;
-
-  if (req.query.min !== undefined) {
-    min = parseQueryInt(req.query.min);
-    if (min === null) {
-      return res.status(400).json({ error: { type: 'validation', message: 'min and max must be integers' } });
-    }
-  } else {
-    min = 1;
+  const minResult = validateParam(req.query.min, 'min', 1);
+  if (!minResult.ok) {
+    return res.status(400).json({ error: { type: 'validation', message: minResult.error } });
   }
 
-  if (req.query.max !== undefined) {
-    max = parseQueryInt(req.query.max);
-    if (max === null) {
-      return res.status(400).json({ error: { type: 'validation', message: 'min and max must be integers' } });
-    }
-  } else {
-    max = 100;
+  const maxResult = validateParam(req.query.max, 'max', 100);
+  if (!maxResult.ok) {
+    return res.status(400).json({ error: { type: 'validation', message: maxResult.error } });
   }
+
+  const min = minResult.value;
+  const max = maxResult.value;
 
   if (min >= max) {
     return res.status(400).json({ error: { type: 'validation', message: 'min must be less than max' } });

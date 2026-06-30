@@ -84,7 +84,7 @@ describe('GET /random with invalid query params', () => {
     expect(response.body).toEqual({
       error: {
         type: 'validation',
-        message: 'min and max must be integers'
+        message: 'min must be a positive integer'
       }
     });
   });
@@ -95,7 +95,7 @@ describe('GET /random with invalid query params', () => {
     expect(response.body).toEqual({
       error: {
         type: 'validation',
-        message: 'min and max must be integers'
+        message: 'min must be a positive integer'
       }
     });
   });
@@ -106,7 +106,29 @@ describe('GET /random with invalid query params', () => {
     expect(response.body).toEqual({
       error: {
         type: 'validation',
-        message: 'min and max must be integers'
+        message: 'max must be a positive integer'
+      }
+    });
+  });
+
+  it('returns 400 when min is a negative integer', async () => {
+    const response = await request(app).get('/random?min=-5');
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: {
+        type: 'validation',
+        message: 'min must be a positive integer'
+      }
+    });
+  });
+
+  it('returns 400 when max is a negative integer', async () => {
+    const response = await request(app).get('/random?max=-10');
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: {
+        type: 'validation',
+        message: 'max must be a positive integer'
       }
     });
   });

@@ -27,4 +27,30 @@ describe('Character router', () => {
     const response = await request(app).get('/random/character/history');
     expect(response.status).not.toBe(404);
   });
+
+  it('GET /random/character with no query params returns a mixed-case letter', async () => {
+    const response = await request(app).get('/random/character');
+    expect(response.status).toBe(200);
+    expect(response.body.data.character).toMatch(/^[a-zA-Z]$/);
+  });
+
+  it('GET /random/character?case=mixed returns a single mixed-case letter', async () => {
+    const response = await request(app).get('/random/character?case=mixed');
+    expect(response.status).toBe(200);
+    expect(response.body.data.character).toMatch(/^[a-zA-Z]$/);
+  });
+
+  it('GET /random/character?case=lower returns only lowercase characters across 20 calls', async () => {
+    for (let i = 0; i < 20; i++) {
+      const response = await request(app).get('/random/character?case=lower');
+      expect(response.status).toBe(200);
+      expect(response.body.data.character).toMatch(/^[a-z]$/);
+    }
+  });
+
+  it('POST /random/character returns 404 Not Found', async () => {
+    const response = await request(app).post('/random/character');
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({ error: { type: 'not_found', message: 'Not found' } });
+  });
 });

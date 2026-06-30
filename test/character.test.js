@@ -28,6 +28,33 @@ describe('Character router', () => {
     expect(response.status).not.toBe(404);
   });
 
+  it('GET /random/character/history on a fresh DB returns an empty list', async () => {
+    const response = await request(app).get('/random/character/history');
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ data: { characters: [] } });
+  });
+
+  it('GET /random/character/history returns entries most-recent-first with camelCase fields', async () => {
+    const first = await request(app).get('/random/character');
+    const second = await request(app).get('/random/character');
+    const third = await request(app).get('/random/character');
+
+    const response = await request(app).get('/random/character/history');
+    expect(response.status).toBe(200);
+    expect(response.body.data.characters).toHaveLength(3);
+
+    const [newest, middle, oldest] = response.body.data.characters;
+    expect(newest.character).toBe(third.body.data.character);
+    expect(middle.character).toBe(second.body.data.character);
+    expect(oldest.character).toBe(first.body.data.character);
+
+    response.body.data.characters.forEach((entry) => {
+      expect(entry).toHaveProperty('character');
+      expect(entry).toHaveProperty('generatedAt');
+      expect(() => new Date(entry.generatedAt).toISOString()).not.toThrow();
+    });
+  });
+
   it('GET /random/character with no query params returns a mixed-case letter', async () => {
     const response = await request(app).get('/random/character');
     expect(response.status).toBe(200);
@@ -54,6 +81,12 @@ describe('Character router', () => {
       expect(response.status).toBe(200);
       expect(response.body.data.character).toMatch(/^[a-z]$/);
     }
+  });
+
+  it('GET /random/character?case=lower&foo=bar ignores unknown query params', async () => {
+    const response = await request(app).get('/random/character?case=lower&foo=bar');
+    expect(response.status).toBe(200);
+    expect(response.body.data.character).toMatch(/^[a-z]$/);
   });
 
   it('GET /random/character?case=digits returns 400 with a validation error', async () => {

@@ -49,6 +49,19 @@ describe('GET /random', () => {
   });
 });
 
+describe('consecutive calls', () => {
+  beforeEach(() => route._reset());
+
+  it('should return different numbers on consecutive calls', async () => {
+    const pairs = 10;
+    for (let i = 0; i < pairs; i++) {
+      const res1 = await request(app).get('/random');
+      const res2 = await request(app).get('/random');
+      expect(res1.body.data.number).not.toBe(res2.body.data.number);
+    }
+  });
+});
+
 describe('POST /random (wrong HTTP method)', () => {
   it('returns 404 status', async () => {
     const response = await request(app).post('/random');

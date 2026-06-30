@@ -7,6 +7,12 @@ function createDb(path) {
     number INTEGER NOT NULL,
     generated_at TEXT NOT NULL
   )`);
+  db.exec(`CREATE TABLE IF NOT EXISTS generated_characters (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    character TEXT NOT NULL,
+    case_used TEXT NOT NULL,
+    generated_at TEXT NOT NULL
+  )`);
   return db;
 }
 

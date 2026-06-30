@@ -1,11 +1,15 @@
 const express = require('express');
-const randomRouter = require('./routes/random');
+const { createRouter } = require('./routes/random');
 
-const app = express();
+function createApp(db) {
+  const app = express();
 
-app.use('/', randomRouter);
+  app.use('/', createRouter(db));
 
-// 404 catch-all middleware (must be last)
-app.use((req, res) => res.status(404).json({ error: { type: 'not_found', message: 'Not found' } }));
+  // 404 catch-all middleware (must be last)
+  app.use((req, res) => res.status(404).json({ error: { type: 'not_found', message: 'Not found' } }));
 
-module.exports = app;
+  return app;
+}
+
+module.exports = { createApp };

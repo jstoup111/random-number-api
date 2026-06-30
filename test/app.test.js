@@ -1,21 +1,40 @@
 const request = require('supertest');
-const app = require('../src/app');
+const { createApp } = require('../src/app');
+const { createDb } = require('../src/db');
 
 describe('Express app', () => {
+  let db;
+
+  beforeEach(() => {
+    db = createDb(':memory:');
+  });
+
   it('can be required without throwing', () => {
     expect(() => {
       require('../src/app');
     }).not.toThrow();
   });
 
-  it('exports an Express app instance', () => {
-    const app = require('../src/app');
+  it('exports a createApp factory', () => {
+    expect(typeof createApp).toBe('function');
+  });
+
+  it('createApp(db) returns an Express app instance', () => {
+    const app = createApp(db);
     expect(app).toBeDefined();
     expect(typeof app).toBe('function');
   });
 });
 
 describe('404 catch-all middleware', () => {
+  let db;
+  let app;
+
+  beforeEach(() => {
+    db = createDb(':memory:');
+    app = createApp(db);
+  });
+
   it('returns 404 for nonexistent route', async () => {
     const response = await request(app).get('/nonexistent');
     expect(response.status).toBe(404);

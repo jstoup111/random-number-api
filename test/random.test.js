@@ -89,6 +89,17 @@ describe('consecutive calls', () => {
   });
 });
 
+describe('null initial state — retry loop skipped on first call', () => {
+  it('should skip retry loop when lastNumber is null', async () => {
+    route._reset();
+    const mockRandom = jest.spyOn(Math, 'random').mockReturnValue(0.41);
+    const res = await request(app).get('/random');
+    expect(res.body.data.number).toBe(42);  // Math.floor(0.41 * 100) + 1 = 42
+    expect(mockRandom).toHaveBeenCalledTimes(1);
+    mockRandom.mockRestore();
+  });
+});
+
 describe('POST /random (wrong HTTP method)', () => {
   it('returns 404 status', async () => {
     const response = await request(app).post('/random');

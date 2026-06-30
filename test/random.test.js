@@ -49,6 +49,22 @@ describe('GET /random', () => {
   });
 });
 
+describe('lastNumber state', () => {
+  it('should update lastNumber to the returned value', async () => {
+    route._reset();
+    const res = await request(app).get('/random');
+    expect(route._getLastNumber()).toBe(res.body.data.number);
+  });
+
+  it('should update lastNumber across multiple consecutive calls', async () => {
+    route._reset();
+    for (let i = 0; i < 5; i++) {
+      const res = await request(app).get('/random');
+      expect(route._getLastNumber()).toBe(res.body.data.number);
+    }
+  });
+});
+
 describe('consecutive calls', () => {
   beforeEach(() => route._reset());
 

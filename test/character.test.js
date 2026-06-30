@@ -1,7 +1,7 @@
 const request = require('supertest');
 const express = require('express');
 const { createRouter } = require('../src/routes/character');
-const { createDb } = require('../src/db');
+const { createDb, createFallbackDb } = require('../src/db');
 
 describe('Character router', () => {
   let db;
@@ -64,8 +64,38 @@ describe('Character router', () => {
     });
   });
 
+  it('GET /random/character?case=Upper returns 400 with a validation error (case-sensitive)', async () => {
+    const response = await request(app).get('/random/character?case=Upper');
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: { type: 'validation', message: 'case must be one of: upper, lower, mixed' }
+    });
+  });
+
+  it('GET /random/character?case=UPPER returns 400 with a validation error (case-sensitive)', async () => {
+    const response = await request(app).get('/random/character?case=UPPER');
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: { type: 'validation', message: 'case must be one of: upper, lower, mixed' }
+    });
+  });
+
+  it('GET /random/character?case= returns 400 with a validation error (empty value)', async () => {
+    const response = await request(app).get('/random/character?case=');
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: { type: 'validation', message: 'case must be one of: upper, lower, mixed' }
+    });
+  });
+
   it('POST /random/character returns 404 Not Found', async () => {
     const response = await request(app).post('/random/character');
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({ error: { type: 'not_found', message: 'Not found' } });
+  });
+
+  it('POST /random/character/history returns 404 Not Found', async () => {
+    const response = await request(app).post('/random/character/history');
     expect(response.status).toBe(404);
     expect(response.body).toEqual({ error: { type: 'not_found', message: 'Not found' } });
   });
@@ -79,5 +109,21 @@ describe('Character router', () => {
     expect(rows[0].character).toBe(response.body.data.character);
     expect(() => new Date(rows[0].generated_at).toISOString()).not.toThrow();
     expect(new Date(rows[0].generated_at).toISOString()).toBe(rows[0].generated_at);
+  });
+
+  describe('GET /random/character — DB failure', () => {
+    it('returns 500 with an internal error envelope when the database is unavailable', async () => {
+      const fallbackDb = createFallbackDb();
+      const fallbackApp = express();
+      fallbackApp.use('/', createRouter(fallbackDb));
+      fallbackApp.use((req, res) => res.status(404).json({ error: { type: 'not_found', message: 'Not found' } }));
+
+      const response = await request(fallbackApp).get('/random/character');
+
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({
+        error: { type: 'internal', message: 'Internal server error' }
+      });
+    });
   });
 });

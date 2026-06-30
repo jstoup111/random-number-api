@@ -31,10 +31,14 @@ function createRouter(db) {
   });
 
   router.get('/random/history', (req, res) => {
-    const rows = db.prepare(
-      'SELECT number, generated_at AS generatedAt FROM generated_numbers ORDER BY id DESC'
-    ).all();
-    res.json({ data: { numbers: rows } });
+    try {
+      const rows = db.prepare(
+        'SELECT number, generated_at AS generatedAt FROM generated_numbers ORDER BY id DESC'
+      ).all();
+      res.json({ data: { numbers: rows } });
+    } catch (err) {
+      res.status(500).json({ error: { type: 'internal', message: 'Internal server error' } });
+    }
   });
 
   return router;

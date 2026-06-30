@@ -259,6 +259,27 @@ describe('Random router', () => {
     });
   });
 
+  describe('GET /random/history — DB read failure', () => {
+    it('GET /random/history returns 500 when DB read fails', async () => {
+      const originalPrepare = db.prepare;
+      db.prepare = jest.fn(() => {
+        throw new Error('DB error');
+      });
+
+      const response = await request(app)
+        .get('/random/history')
+        .expect(500);
+
+      expect(response.body).toEqual({
+        error: { type: 'internal', message: 'Internal server error' }
+      });
+      expect(response.body).not.toHaveProperty('data');
+
+      db.prepare = originalPrepare;
+    });
+  });
+
+
   describe('POST /random (wrong HTTP method)', () => {
     it('returns 404 status', async () => {
       const response = await request(app).post('/random');

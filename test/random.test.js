@@ -32,3 +32,20 @@ describe('GET /random', () => {
     }
   });
 });
+
+describe('POST /random (wrong HTTP method)', () => {
+  it('returns 404 status', async () => {
+    const response = await request(app).post('/random');
+    expect(response.status).toBe(404);
+  });
+
+  it('returns correct 404 error envelope', async () => {
+    const response = await request(app).post('/random');
+    expect(response.body).toEqual({
+      error: {
+        type: 'not_found',
+        message: 'Not found'
+      }
+    });
+  });
+});

@@ -55,4 +55,16 @@ describe('404 catch-all middleware', () => {
     const response = await request(app).get('/random/extra/segments');
     expect(response.headers['content-type']).toMatch(/application\/json/);
   });
+
+  it('returns 404 with JSON for DELETE /anything', async () => {
+    const response = await request(app).delete('/anything');
+    expect(response.status).toBe(404);
+    expect(response.headers['content-type']).toMatch(/application\/json/);
+    expect(response.body).toEqual({
+      error: {
+        type: 'not_found',
+        message: 'Not found'
+      }
+    });
+  });
 });

@@ -1,5 +1,5 @@
 const { createApp } = require('./src/app');
-const { createDb } = require('./src/db');
+const { createDb, createFallbackDb } = require('./src/db');
 
 const PORT = process.env.PORT || 3000;
 
@@ -9,7 +9,14 @@ if (process.env.PORT && isNaN(PORT)) {
   process.exit(1);
 }
 
-const db = createDb('random_numbers.db');
+let db;
+try {
+  db = createDb('random_numbers.db');
+} catch (err) {
+  console.error(`Failed to initialize database: ${err.message}`);
+  db = createFallbackDb();
+}
+
 const app = createApp(db);
 
 app.listen(PORT, () => {

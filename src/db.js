@@ -10,4 +10,16 @@ function createDb(path) {
   return db;
 }
 
-module.exports = { createDb };
+/**
+ * Creates a fallback DB wrapper that will throw when any method is called.
+ * This allows the server to start even if the real database cannot be initialized.
+ */
+function createFallbackDb() {
+  return {
+    prepare: () => {
+      throw new Error('Database unavailable: failed to initialize at startup');
+    }
+  };
+}
+
+module.exports = { createDb, createFallbackDb };

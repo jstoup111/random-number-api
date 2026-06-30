@@ -226,7 +226,7 @@ describe('Random router', () => {
       const router = createRouter(db);
       const app = express();
       app.use(express.json());
-      app.use('/random', router);
+      app.use('/', router);
 
       const request = require('supertest');
       const response = await request(app)

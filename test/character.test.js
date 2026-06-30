@@ -56,6 +56,14 @@ describe('Character router', () => {
     }
   });
 
+  it('GET /random/character?case=digits returns 400 with a validation error', async () => {
+    const response = await request(app).get('/random/character?case=digits');
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: { type: 'validation', message: 'case must be one of: upper, lower, mixed' }
+    });
+  });
+
   it('POST /random/character returns 404 Not Found', async () => {
     const response = await request(app).post('/random/character');
     expect(response.status).toBe(404);

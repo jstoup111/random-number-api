@@ -60,6 +60,17 @@ describe('consecutive calls', () => {
       expect(res1.body.data.number).not.toBe(res2.body.data.number);
     }
   });
+
+  it('should have no adjacent duplicates across 100 calls', async () => {
+    const numbers = [];
+    for (let i = 0; i < 100; i++) {
+      const res = await request(app).get('/random');
+      numbers.push(res.body.data.number);
+    }
+    for (let i = 0; i < numbers.length - 1; i++) {
+      expect(numbers[i]).not.toBe(numbers[i + 1]);
+    }
+  });
 });
 
 describe('POST /random (wrong HTTP method)', () => {

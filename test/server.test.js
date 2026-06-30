@@ -59,4 +59,33 @@ describe('Server startup', () => {
       child.kill();
     }, 5000);
   });
+
+  it('should exit with non-zero code when PORT env var is invalid', (done) => {
+    const indexPath = path.join(__dirname, '..', 'index.js');
+    const child = spawn('node', [indexPath], {
+      env: { ...process.env, PORT: 'abc' },
+      stdio: ['pipe', 'pipe', 'pipe']
+    });
+
+    let output = '';
+
+    child.stdout.on('data', (data) => {
+      output += data.toString();
+    });
+
+    child.stderr.on('data', (data) => {
+      output += data.toString();
+    });
+
+    child.on('exit', (code) => {
+      expect(code).not.toEqual(0);
+      expect(output.toLowerCase()).toContain('error');
+      done();
+    });
+
+    // Timeout to prevent hanging
+    setTimeout(() => {
+      child.kill();
+    }, 5000);
+  });
 });

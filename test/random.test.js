@@ -162,6 +162,21 @@ describe('Random router', () => {
     });
   });
 
+  describe('persistence', () => {
+    it('GET /random persists the number to the database before responding', async () => {
+      const response = await request(app)
+        .get('/random')
+        .expect(200);
+
+      const number = response.body.data.number;
+      const rows = db.prepare('SELECT * FROM generated_numbers').all();
+
+      expect(rows).toHaveLength(1);
+      expect(rows[0].number).toBe(number);
+      expect(rows[0].generated_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+    });
+  });
+
   describe('POST /random (wrong HTTP method)', () => {
     it('returns 404 status', async () => {
       const response = await request(app).post('/random');

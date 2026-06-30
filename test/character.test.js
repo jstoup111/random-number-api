@@ -126,4 +126,20 @@ describe('Character router', () => {
       });
     });
   });
+
+  describe('GET /random/character/history — DB failure', () => {
+    it('returns 500 with an internal error envelope when the database is unavailable', async () => {
+      const fallbackDb = createFallbackDb();
+      const fallbackApp = express();
+      fallbackApp.use('/', createRouter(fallbackDb));
+      fallbackApp.use((req, res) => res.status(404).json({ error: { type: 'not_found', message: 'Not found' } }));
+
+      const response = await request(fallbackApp).get('/random/character/history');
+
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({
+        error: { type: 'internal', message: 'Internal server error' }
+      });
+    });
+  });
 });

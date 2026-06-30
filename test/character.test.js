@@ -40,6 +40,14 @@ describe('Character router', () => {
     expect(response.body.data.character).toMatch(/^[a-zA-Z]$/);
   });
 
+  it('GET /random/character?case=upper returns only uppercase characters across 20 calls', async () => {
+    for (let i = 0; i < 20; i++) {
+      const response = await request(app).get('/random/character?case=upper');
+      expect(response.status).toBe(200);
+      expect(response.body.data.character).toMatch(/^[A-Z]$/);
+    }
+  });
+
   it('GET /random/character?case=lower returns only lowercase characters across 20 calls', async () => {
     for (let i = 0; i < 20; i++) {
       const response = await request(app).get('/random/character?case=lower');
@@ -52,5 +60,16 @@ describe('Character router', () => {
     const response = await request(app).post('/random/character');
     expect(response.status).toBe(404);
     expect(response.body).toEqual({ error: { type: 'not_found', message: 'Not found' } });
+  });
+
+  it('GET /random/character persists the generated character to generated_characters', async () => {
+    const response = await request(app).get('/random/character');
+    expect(response.status).toBe(200);
+
+    const rows = db.prepare('SELECT * FROM generated_characters').all();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].character).toBe(response.body.data.character);
+    expect(() => new Date(rows[0].generated_at).toISOString()).not.toThrow();
+    expect(new Date(rows[0].generated_at).toISOString()).toBe(rows[0].generated_at);
   });
 });

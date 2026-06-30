@@ -1,7 +1,8 @@
 const express = require('express');
 
 const CASE_SETS = {
-  mixed: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  mixed: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+  upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 };
 
 function parseCase(req) {

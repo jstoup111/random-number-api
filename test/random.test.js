@@ -61,6 +61,17 @@ describe('Random router', () => {
         expect(number).toBeLessThanOrEqual(100);
       }
     });
+
+    it('without count param returns scalar shape { data: { number } } (not array)', async () => {
+      const response = await request(app).get('/random?foo=bar');
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        data: {
+          number: expect.any(Number)
+        }
+      });
+      expect(response.body.data).not.toHaveProperty('numbers');
+    });
   });
 
   describe('lastNumber state', () => {

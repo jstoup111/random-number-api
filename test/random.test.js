@@ -546,4 +546,38 @@ describe('Random router', () => {
       expect(lastBatchNumber).not.toBe(scalarNumber);
     });
   });
+
+  describe('Rejected batch requests persist nothing', () => {
+    it('zero count (count=0) and over-cap count (count=101) requests do not persist any numbers', async () => {
+      // Generate initial history to establish a known state
+      const initialRes = await request(app).get('/random').expect(200);
+      const initialHistoryRes = await request(app).get('/random/history').expect(200);
+      const initialCount = initialHistoryRes.body.data.numbers.length;
+
+      // Make invalid request with count=0 (should return 400)
+      const zeroCountRes = await request(app).get('/random?count=0');
+      expect(zeroCountRes.status).toBe(400);
+      expect(zeroCountRes.body).toEqual({
+        error: {
+          type: 'validation',
+          message: 'count must be a positive integer'
+        }
+      });
+
+      // Make invalid request with count=101 (should return 400)
+      const overCapRes = await request(app).get('/random?count=101');
+      expect(overCapRes.status).toBe(400);
+      expect(overCapRes.body).toEqual({
+        error: {
+          type: 'validation',
+          message: 'count must not exceed 100'
+        }
+      });
+
+      // Verify history count is unchanged
+      const finalHistoryRes = await request(app).get('/random/history').expect(200);
+      const finalCount = finalHistoryRes.body.data.numbers.length;
+      expect(finalCount).toBe(initialCount);
+    });
+  });
 });

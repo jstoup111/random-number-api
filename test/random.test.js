@@ -194,6 +194,22 @@ describe('Random router', () => {
         expect(number).toBeLessThanOrEqual(100);
       });
     });
+
+    it('no consecutive duplicates within a batch of 50', async () => {
+      route._reset();
+      const response = await request(app).get('/random?count=50');
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.data).toHaveProperty('numbers');
+      const { numbers } = response.body.data;
+      expect(Array.isArray(numbers)).toBe(true);
+      expect(numbers).toHaveLength(50);
+
+      // Verify no adjacent duplicates within the batch
+      for (let i = 0; i < numbers.length - 1; i++) {
+        expect(numbers[i]).not.toBe(numbers[i + 1]);
+      }
+    });
   });
 
   describe('lastNumber state', () => {

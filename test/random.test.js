@@ -61,6 +61,179 @@ describe('Random router', () => {
         expect(number).toBeLessThanOrEqual(100);
       }
     });
+
+    it('without count param returns scalar shape { data: { number } } (not array)', async () => {
+      const response = await request(app).get('/random?foo=bar');
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        data: {
+          number: expect.any(Number)
+        }
+      });
+      expect(response.body.data).not.toHaveProperty('numbers');
+    });
+
+    it('rejects non-numeric count value with 400', async () => {
+      const response = await request(app).get('/random?count=abc');
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        error: {
+          type: 'validation',
+          message: 'count must be a positive integer'
+        }
+      });
+    });
+
+    it('rejects decimal count value with 400', async () => {
+      const response = await request(app).get('/random?count=2.5');
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        error: {
+          type: 'validation',
+          message: 'count must be a positive integer'
+        }
+      });
+    });
+
+    it('rejects empty string count value with 400', async () => {
+      const response = await request(app).get('/random?count=');
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        error: {
+          type: 'validation',
+          message: 'count must be a positive integer'
+        }
+      });
+    });
+
+    it('rejects zero count value with 400', async () => {
+      const response = await request(app).get('/random?count=0');
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        error: {
+          type: 'validation',
+          message: 'count must be a positive integer'
+        }
+      });
+    });
+
+    it('rejects negative count value with 400', async () => {
+      const response = await request(app).get('/random?count=-3');
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        error: {
+          type: 'validation',
+          message: 'count must be a positive integer'
+        }
+      });
+    });
+
+    it('rejects count above 100 with 400 and distinct error message', async () => {
+      const response = await request(app).get('/random?count=101');
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        error: {
+          type: 'validation',
+          message: 'count must not exceed 100'
+        }
+      });
+    });
+
+    it('rejects very large count value with 400 and distinct error message', async () => {
+      const response = await request(app).get('/random?count=1000000');
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        error: {
+          type: 'validation',
+          message: 'count must not exceed 100'
+        }
+      });
+    });
+
+    it('valid count returns an array of numbers', async () => {
+      const response = await request(app).get('/random?count=5');
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.data).toHaveProperty('numbers');
+      expect(Array.isArray(response.body.data.numbers)).toBe(true);
+      expect(response.body.data.numbers).toHaveLength(5);
+      response.body.data.numbers.forEach(number => {
+        expect(typeof number).toBe('number');
+        expect(Number.isInteger(number)).toBe(true);
+        expect(number).toBeGreaterThanOrEqual(1);
+        expect(number).toBeLessThanOrEqual(100);
+      });
+    });
+
+    it('count=1 returns array shape, not scalar', async () => {
+      const response = await request(app).get('/random?count=1');
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.data).toHaveProperty('numbers');
+      expect(Array.isArray(response.body.data.numbers)).toBe(true);
+      expect(response.body.data.numbers).toHaveLength(1);
+      expect(response.body.data).not.toHaveProperty('number');
+      const [number] = response.body.data.numbers;
+      expect(typeof number).toBe('number');
+      expect(Number.isInteger(number)).toBe(true);
+      expect(number).toBeGreaterThanOrEqual(1);
+      expect(number).toBeLessThanOrEqual(100);
+    });
+
+    it('count=100 boundary returns exactly 100 numbers', async () => {
+      const response = await request(app).get('/random?count=100');
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.data).toHaveProperty('numbers');
+      expect(Array.isArray(response.body.data.numbers)).toBe(true);
+      expect(response.body.data.numbers).toHaveLength(100);
+      response.body.data.numbers.forEach(number => {
+        expect(typeof number).toBe('number');
+        expect(Number.isInteger(number)).toBe(true);
+        expect(number).toBeGreaterThanOrEqual(1);
+        expect(number).toBeLessThanOrEqual(100);
+      });
+    });
+
+    it('no consecutive duplicates within a batch of 50', async () => {
+      route._reset();
+      const response = await request(app).get('/random?count=50');
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.data).toHaveProperty('numbers');
+      const { numbers } = response.body.data;
+      expect(Array.isArray(numbers)).toBe(true);
+      expect(numbers).toHaveLength(50);
+
+      // Verify no adjacent duplicates within the batch
+      for (let i = 0; i < numbers.length - 1; i++) {
+        expect(numbers[i]).not.toBe(numbers[i + 1]);
+      }
+    });
+
+    it('max-size batch (100) terminates promptly with no adjacent duplicates', async () => {
+      route._reset();
+      const response = await request(app).get('/random?count=100');
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.data).toHaveProperty('numbers');
+      const { numbers } = response.body.data;
+      expect(Array.isArray(numbers)).toBe(true);
+      expect(numbers).toHaveLength(100);
+
+      // Verify all numbers are in [1, 100]
+      numbers.forEach(number => {
+        expect(typeof number).toBe('number');
+        expect(Number.isInteger(number)).toBe(true);
+        expect(number).toBeGreaterThanOrEqual(1);
+        expect(number).toBeLessThanOrEqual(100);
+      });
+
+      // Verify no adjacent duplicates within the batch
+      for (let i = 0; i < numbers.length - 1; i++) {
+        expect(numbers[i]).not.toBe(numbers[i + 1]);
+      }
+    });
   });
 
   describe('lastNumber state', () => {
@@ -217,6 +390,31 @@ describe('Random router', () => {
       });
     });
 
+    it('batch numbers are persisted individually in order (each in history, most recent first)', async () => {
+      route._reset();
+
+      // Request a batch of 5 numbers
+      const batchRes = await request(app).get('/random?count=5').expect(200);
+      expect(batchRes.body.data.numbers).toHaveLength(5);
+      const batchNumbers = batchRes.body.data.numbers;
+
+      // Immediately fetch history
+      const historyRes = await request(app).get('/random/history').expect(200);
+
+      // Verify exactly 5 entries in history
+      expect(historyRes.body.data.numbers).toHaveLength(5);
+
+      // Verify each entry's number matches the corresponding batch value
+      // History is in descending order (most recent first), so we compare in reverse
+      const historyNumbers = historyRes.body.data.numbers.map(entry => entry.number);
+      const reversedBatch = [...batchNumbers].reverse();
+
+      expect(historyNumbers).toEqual(reversedBatch);
+
+      // Verify the most recent entry (first in history) matches the batch's last number
+      expect(historyNumbers[0]).toBe(batchNumbers[batchNumbers.length - 1]);
+    });
+
     it('GET /random/history returns 200 with empty array when DB is empty', async () => {
       const { createRouter } = require('../src/routes/random');
       const { createDb } = require('../src/db');
@@ -306,6 +504,80 @@ describe('Random router', () => {
       expect(response.body).toEqual({
         error: { type: 'not_found', message: 'Not found' }
       });
+    });
+  });
+
+  describe('no-consecutive-repeat carries across scalar/batch boundary', () => {
+    it('scenario A: scalar request result ≠ first element of following batch', async () => {
+      route._reset();
+
+      // Make a scalar request, get number N
+      const scalarRes = await request(app).get('/random');
+      expect(scalarRes.status).toBe(200);
+      const scalarNumber = scalarRes.body.data.number;
+      expect(typeof scalarNumber).toBe('number');
+
+      // Make a batch request with count=10
+      const batchRes = await request(app).get('/random?count=10');
+      expect(batchRes.status).toBe(200);
+      expect(batchRes.body.data.numbers).toHaveLength(10);
+      const firstBatchNumber = batchRes.body.data.numbers[0];
+
+      // Verify that the scalar result ≠ first element of batch
+      expect(scalarNumber).not.toBe(firstBatchNumber);
+    });
+
+    it('scenario B: batch request last element ≠ result of following scalar request', async () => {
+      route._reset();
+
+      // Make a batch request with count=10
+      const batchRes = await request(app).get('/random?count=10');
+      expect(batchRes.status).toBe(200);
+      expect(batchRes.body.data.numbers).toHaveLength(10);
+      const lastBatchNumber = batchRes.body.data.numbers[9];
+
+      // Make a scalar request
+      const scalarRes = await request(app).get('/random');
+      expect(scalarRes.status).toBe(200);
+      const scalarNumber = scalarRes.body.data.number;
+      expect(typeof scalarNumber).toBe('number');
+
+      // Verify that the batch's last element ≠ scalar result
+      expect(lastBatchNumber).not.toBe(scalarNumber);
+    });
+  });
+
+  describe('Rejected batch requests persist nothing', () => {
+    it('zero count (count=0) and over-cap count (count=101) requests do not persist any numbers', async () => {
+      // Generate initial history to establish a known state
+      const initialRes = await request(app).get('/random').expect(200);
+      const initialHistoryRes = await request(app).get('/random/history').expect(200);
+      const initialCount = initialHistoryRes.body.data.numbers.length;
+
+      // Make invalid request with count=0 (should return 400)
+      const zeroCountRes = await request(app).get('/random?count=0');
+      expect(zeroCountRes.status).toBe(400);
+      expect(zeroCountRes.body).toEqual({
+        error: {
+          type: 'validation',
+          message: 'count must be a positive integer'
+        }
+      });
+
+      // Make invalid request with count=101 (should return 400)
+      const overCapRes = await request(app).get('/random?count=101');
+      expect(overCapRes.status).toBe(400);
+      expect(overCapRes.body).toEqual({
+        error: {
+          type: 'validation',
+          message: 'count must not exceed 100'
+        }
+      });
+
+      // Verify history count is unchanged
+      const finalHistoryRes = await request(app).get('/random/history').expect(200);
+      const finalCount = finalHistoryRes.body.data.numbers.length;
+      expect(finalCount).toBe(initialCount);
     });
   });
 });

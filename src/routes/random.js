@@ -48,6 +48,16 @@ function createRouter(db) {
             }
           });
         }
+
+        // Check if count exceeds 100
+        if (parsed > 100) {
+          return res.status(400).json({
+            error: {
+              type: 'validation',
+              message: 'count must not exceed 100'
+            }
+          });
+        }
       }
 
       const number = generateAndPersistOne(db);

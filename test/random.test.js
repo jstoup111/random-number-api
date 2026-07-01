@@ -127,6 +127,28 @@ describe('Random router', () => {
         }
       });
     });
+
+    it('rejects count above 100 with 400 and distinct error message', async () => {
+      const response = await request(app).get('/random?count=101');
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        error: {
+          type: 'validation',
+          message: 'count must not exceed 100'
+        }
+      });
+    });
+
+    it('rejects very large count value with 400 and distinct error message', async () => {
+      const response = await request(app).get('/random?count=1000000');
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        error: {
+          type: 'validation',
+          message: 'count must not exceed 100'
+        }
+      });
+    });
   });
 
   describe('lastNumber state', () => {

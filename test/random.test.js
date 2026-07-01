@@ -105,6 +105,28 @@ describe('Random router', () => {
         }
       });
     });
+
+    it('rejects zero count value with 400', async () => {
+      const response = await request(app).get('/random?count=0');
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        error: {
+          type: 'validation',
+          message: 'count must be a positive integer'
+        }
+      });
+    });
+
+    it('rejects negative count value with 400', async () => {
+      const response = await request(app).get('/random?count=-3');
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        error: {
+          type: 'validation',
+          message: 'count must be a positive integer'
+        }
+      });
+    });
   });
 
   describe('lastNumber state', () => {

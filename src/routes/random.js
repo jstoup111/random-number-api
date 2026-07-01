@@ -38,6 +38,16 @@ function createRouter(db) {
             }
           });
         }
+
+        // Check if count is less than 1 (rejects zero and negative values)
+        if (parsed < 1) {
+          return res.status(400).json({
+            error: {
+              type: 'validation',
+              message: 'count must be a positive integer'
+            }
+          });
+        }
       }
 
       const number = generateAndPersistOne(db);

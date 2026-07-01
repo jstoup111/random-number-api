@@ -72,6 +72,39 @@ describe('Random router', () => {
       });
       expect(response.body.data).not.toHaveProperty('numbers');
     });
+
+    it('rejects non-numeric count value with 400', async () => {
+      const response = await request(app).get('/random?count=abc');
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        error: {
+          type: 'validation',
+          message: 'count must be a positive integer'
+        }
+      });
+    });
+
+    it('rejects decimal count value with 400', async () => {
+      const response = await request(app).get('/random?count=2.5');
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        error: {
+          type: 'validation',
+          message: 'count must be a positive integer'
+        }
+      });
+    });
+
+    it('rejects empty string count value with 400', async () => {
+      const response = await request(app).get('/random?count=');
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        error: {
+          type: 'validation',
+          message: 'count must be a positive integer'
+        }
+      });
+    });
   });
 
   describe('lastNumber state', () => {

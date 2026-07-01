@@ -24,6 +24,22 @@ function createRouter(db) {
 
   router.get('/random', (req, res) => {
     try {
+      // Validate count parameter if present
+      if (req.query.count !== undefined) {
+        const countStr = req.query.count;
+        const parsed = parseInt(countStr, 10);
+
+        // Check if parse failed (NaN) or if string representation doesn't match (rejects decimals like "2.5")
+        if (isNaN(parsed) || String(parsed) !== countStr) {
+          return res.status(400).json({
+            error: {
+              type: 'validation',
+              message: 'count must be a positive integer'
+            }
+          });
+        }
+      }
+
       const number = generateAndPersistOne(db);
 
       res.json({

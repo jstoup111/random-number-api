@@ -164,6 +164,21 @@ describe('Random router', () => {
         expect(number).toBeLessThanOrEqual(100);
       });
     });
+
+    it('count=1 returns array shape, not scalar', async () => {
+      const response = await request(app).get('/random?count=1');
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.data).toHaveProperty('numbers');
+      expect(Array.isArray(response.body.data.numbers)).toBe(true);
+      expect(response.body.data.numbers).toHaveLength(1);
+      expect(response.body.data).not.toHaveProperty('number');
+      const [number] = response.body.data.numbers;
+      expect(typeof number).toBe('number');
+      expect(Number.isInteger(number)).toBe(true);
+      expect(number).toBeGreaterThanOrEqual(1);
+      expect(number).toBeLessThanOrEqual(100);
+    });
   });
 
   describe('lastNumber state', () => {

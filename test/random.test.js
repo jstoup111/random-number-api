@@ -210,6 +210,30 @@ describe('Random router', () => {
         expect(numbers[i]).not.toBe(numbers[i + 1]);
       }
     });
+
+    it('max-size batch (100) terminates promptly with no adjacent duplicates', async () => {
+      route._reset();
+      const response = await request(app).get('/random?count=100');
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.data).toHaveProperty('numbers');
+      const { numbers } = response.body.data;
+      expect(Array.isArray(numbers)).toBe(true);
+      expect(numbers).toHaveLength(100);
+
+      // Verify all numbers are in [1, 100]
+      numbers.forEach(number => {
+        expect(typeof number).toBe('number');
+        expect(Number.isInteger(number)).toBe(true);
+        expect(number).toBeGreaterThanOrEqual(1);
+        expect(number).toBeLessThanOrEqual(100);
+      });
+
+      // Verify no adjacent duplicates within the batch
+      for (let i = 0; i < numbers.length - 1; i++) {
+        expect(numbers[i]).not.toBe(numbers[i + 1]);
+      }
+    });
   });
 
   describe('lastNumber state', () => {

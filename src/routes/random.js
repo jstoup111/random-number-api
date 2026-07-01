@@ -24,6 +24,8 @@ function createRouter(db) {
 
   router.get('/random', (req, res) => {
     try {
+      let count = null;
+
       // Validate count parameter if present
       if (req.query.count !== undefined) {
         const countStr = req.query.count;
@@ -58,8 +60,24 @@ function createRouter(db) {
             }
           });
         }
+
+        count = parsed;
       }
 
+      // If valid count was provided, return batch response
+      if (count !== null) {
+        const numbers = [];
+        for (let i = 0; i < count; i++) {
+          numbers.push(generateAndPersistOne(db));
+        }
+        return res.json({
+          data: {
+            numbers
+          }
+        });
+      }
+
+      // Otherwise, return scalar response
       const number = generateAndPersistOne(db);
 
       res.json({

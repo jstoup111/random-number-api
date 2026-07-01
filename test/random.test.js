@@ -149,6 +149,21 @@ describe('Random router', () => {
         }
       });
     });
+
+    it('valid count returns an array of numbers', async () => {
+      const response = await request(app).get('/random?count=5');
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.data).toHaveProperty('numbers');
+      expect(Array.isArray(response.body.data.numbers)).toBe(true);
+      expect(response.body.data.numbers).toHaveLength(5);
+      response.body.data.numbers.forEach(number => {
+        expect(typeof number).toBe('number');
+        expect(Number.isInteger(number)).toBe(true);
+        expect(number).toBeGreaterThanOrEqual(1);
+        expect(number).toBeLessThanOrEqual(100);
+      });
+    });
   });
 
   describe('lastNumber state', () => {

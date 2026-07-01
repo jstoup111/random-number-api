@@ -38,4 +38,16 @@ describe('Database module', () => {
     // Cleanup
     fs.rmSync(tmpDir, { recursive: true });
   });
+
+  it('createDb creates the generated_characters table with required columns', () => {
+    const db = createDb(':memory:');
+    const tableResult = db.prepare(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='generated_characters'"
+    ).all();
+    expect(tableResult).toHaveLength(1);
+
+    const columns = db.prepare('PRAGMA table_info(generated_characters)').all();
+    const columnNames = columns.map((c) => c.name);
+    expect(columnNames).toEqual(expect.arrayContaining(['character', 'case_used', 'generated_at']));
+  });
 });

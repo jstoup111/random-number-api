@@ -25,7 +25,7 @@ compounds across endpoints.
 ```json
 {
   "error": {
-    "type": "not_found | internal",
+    "type": "not_found | internal | validation",
     "message": "Human-readable description"
   }
 }
@@ -48,3 +48,9 @@ compounds across endpoints.
 ## Deviations
 
 Any endpoint deviating from this contract requires an amendment to this ADR with rationale.
+
+### Amendments
+
+- **2026-06-30**: Added `validation` to the Error Envelope `type` enum. The random-character-support
+  feature introduced query-parameter validation (`GET /random/character?case=...`) and needed a
+  distinct error type for invalid input, separate from `not_found` and `internal`.

@@ -390,6 +390,31 @@ describe('Random router', () => {
       });
     });
 
+    it('batch numbers are persisted individually in order (each in history, most recent first)', async () => {
+      route._reset();
+
+      // Request a batch of 5 numbers
+      const batchRes = await request(app).get('/random?count=5').expect(200);
+      expect(batchRes.body.data.numbers).toHaveLength(5);
+      const batchNumbers = batchRes.body.data.numbers;
+
+      // Immediately fetch history
+      const historyRes = await request(app).get('/random/history').expect(200);
+
+      // Verify exactly 5 entries in history
+      expect(historyRes.body.data.numbers).toHaveLength(5);
+
+      // Verify each entry's number matches the corresponding batch value
+      // History is in descending order (most recent first), so we compare in reverse
+      const historyNumbers = historyRes.body.data.numbers.map(entry => entry.number);
+      const reversedBatch = [...batchNumbers].reverse();
+
+      expect(historyNumbers).toEqual(reversedBatch);
+
+      // Verify the most recent entry (first in history) matches the batch's last number
+      expect(historyNumbers[0]).toBe(batchNumbers[batchNumbers.length - 1]);
+    });
+
     it('GET /random/history returns 200 with empty array when DB is empty', async () => {
       const { createRouter } = require('../src/routes/random');
       const { createDb } = require('../src/db');

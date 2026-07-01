@@ -457,4 +457,44 @@ describe('Random router', () => {
       });
     });
   });
+
+  describe('no-consecutive-repeat carries across scalar/batch boundary', () => {
+    it('scenario A: scalar request result ≠ first element of following batch', async () => {
+      route._reset();
+
+      // Make a scalar request, get number N
+      const scalarRes = await request(app).get('/random');
+      expect(scalarRes.status).toBe(200);
+      const scalarNumber = scalarRes.body.data.number;
+      expect(typeof scalarNumber).toBe('number');
+
+      // Make a batch request with count=10
+      const batchRes = await request(app).get('/random?count=10');
+      expect(batchRes.status).toBe(200);
+      expect(batchRes.body.data.numbers).toHaveLength(10);
+      const firstBatchNumber = batchRes.body.data.numbers[0];
+
+      // Verify that the scalar result ≠ first element of batch
+      expect(scalarNumber).not.toBe(firstBatchNumber);
+    });
+
+    it('scenario B: batch request last element ≠ result of following scalar request', async () => {
+      route._reset();
+
+      // Make a batch request with count=10
+      const batchRes = await request(app).get('/random?count=10');
+      expect(batchRes.status).toBe(200);
+      expect(batchRes.body.data.numbers).toHaveLength(10);
+      const lastBatchNumber = batchRes.body.data.numbers[9];
+
+      // Make a scalar request
+      const scalarRes = await request(app).get('/random');
+      expect(scalarRes.status).toBe(200);
+      const scalarNumber = scalarRes.body.data.number;
+      expect(typeof scalarNumber).toBe('number');
+
+      // Verify that the batch's last element ≠ scalar result
+      expect(lastBatchNumber).not.toBe(scalarNumber);
+    });
+  });
 });
